@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Smart Expense Tracker</title>
+
+  <link rel="stylesheet" href="style.css" />
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+</head>
+
+<body>
+  <!-- Login Page -->
+  <section id="loginPage" class="login-page">
+    <div class="login-card">
+      <div class="brand-icon">₹</div>
+      <h1>Smart Expense Tracker</h1>
+      <p class="subtitle">Manage your money intelligently</p>
+
+      <form id="loginForm">
+        <label for="username">Username</label>
+        <input id="username" type="text" placeholder="Enter username" required />
+
+        <label for="password">Password</label>
+        <div class="password-box">
+          <input id="password" type="password" placeholder="Enter password" required />
+          <button type="button" id="togglePassword">Show</button>
+        </div>
+
+        <label class="remember-row">
+          <input type="checkbox" id="rememberMe" />
+          Remember me
+        </label>
+
+        <button type="submit" class="primary-btn">Login</button>
+        <p id="loginError" class="error-message"></p>
+      </form>
+
+      <small>Demo Username: krish | Password: expense@2026</small>
+    </div>
+  </section>
+
+  <!-- Dashboard -->
+  <section id="dashboardPage" class="dashboard-page hidden">
+    <aside class="sidebar">
+      <div class="sidebar-brand">
+        <div class="brand-icon small">₹</div>
+        <span>Smart Expense</span>
+      </div>
+
+      <nav>
+        <button class="nav-btn active" data-section="dashboardSection">
+          Dashboard
+        </button>
+
+        <button class="nav-btn" data-section="transactionsSection">
+          Transactions
+        </button>
+
+        <button class="nav-btn" data-section="analyticsSection">
+          Analytics
+        </button>
+
+        <button class="nav-btn" data-section="settingsSection">
+          Settings
+        </button>
+      </nav>
+
+      <button id="logoutBtn" class="logout-btn">Logout</button>
+    </aside>
+
+    <main class="main-content">
+      <header class="topbar">
+        <div>
+          <p class="welcome-text">Welcome back,</p>
+          <h2 id="displayUser">Krish</h2>
+        </div>
+
+        <div class="topbar-actions">
+          <div class="live-time">
+            <strong id="liveTime">--:--:--</strong>
+            <span id="liveDate">Loading date...</span>
+          </div>
+
+          <button id="themeToggle" class="icon-btn" title="Toggle theme">
+            🌙
+          </button>
+
+          <button id="notificationBtn" class="icon-btn notification-btn">
+            🔔
+            <span id="notificationCount" class="notification-count">0</span>
+          </button>
+
+          <div id="notificationPanel" class="notification-panel hidden">
+            <div class="notification-header">
+              <strong>Notifications</strong>
+              <button id="markReadBtn">Mark read</button>
+            </div>
+            <div id="notificationList"></div>
+          </div>
+        </div>
+      </header>
+
+      <div id="toast" class="toast"></div>
+
+      <!-- Dashboard Section -->
+      <section id="dashboardSection" class="content-section">
+        <div class="section-heading">
+          <div>
+            <h1>Financial Overview</h1>
+            <p>Track your financial activity at a glance.</p>
+          </div>
+
+          <button id="openTransactionBtn" class="primary-btn">
+            + Add Transaction
+          </button>
+        </div>
+
+        <div class="summary-grid">
+          <div class="panel budget-panel">
+            <div class="panel-heading">
+              <h3>Monthly Budget</h3>
+              <span id="budgetStatus">Set your budget</span>
+            </div>
+
+            <div class="budget-input-row">
+              <input
+                type="number"
+                id="budgetInput"
+                min="0"
+                placeholder="Enter monthly budget"
+              />
+
+              <button id="saveBudgetBtn" class="primary-btn">
+                Save Budget
+              </button>
+            </div>
+
+            <div class="budget-progress">
+              <div id="budgetProgressBar"></div>
+            </div>
+
+            <div class="budget-details">
+              <span>Spent: <strong id="budgetSpent">₹0.00</strong></span>
+              <span>Remaining: <strong id="budgetRemaining">₹0.00</strong></span>
+            </div>
+          </div>
+
+          <div class="summary-card income-card">
+            <span>Total Income</span>
+            <h2 id="totalIncome">₹0.00</h2>
+            <small>Total earnings</small>
+          </div>
+
+          <div class="summary-card expense-card">
+            <span>Total Expenses</span>
+            <h2 id="totalExpense">₹0.00</h2>
+            <small>Total spending</small>
+          </div>
+
+          <div class="summary-card monthly-card">
+            <span>This Month</span>
+            <h2 id="monthlyExpense">₹0.00</h2>
+            <small>Monthly expenses</small>
+          </div>
+        </div>
+
+        <div class="dashboard-grid">
+          <div class="panel">
+            <div class="panel-heading">
+              <h3>Recent Transactions</h3>
+              <button id="viewAllBtn" class="text-btn">View all</button>
+            </div>
+
+            <div id="recentTransactions" class="transaction-list"></div>
+          </div>
+
+          <div class="panel">
+            <div class="panel-heading">
+              <h3>Expense Categories</h3>
+            </div>
+
+            <canvas id="categoryChart"></canvas>
+          </div>
+        </div>
+      </section>
+
+      <!-- Transactions Section -->
+      <section id="transactionsSection" class="content-section hidden">
+        <div class="section-heading">
+          <div>
+            <h1>Transactions</h1>
+            <p>Manage all your income and expenses.</p>
+          </div>
+
+          <button id="openTransactionBtn2" class="primary-btn">
+            + Add Transaction
+          </button>
+        </div>
+
+        <div class="filters">
+          <input
+            id="searchInput"
+            type="search"
+            placeholder="Search transactions..."
+          />
+
+          <select id="categoryFilter">
+            <option value="all">All Categories</option>
+            <option>Food</option>
+            <option>Travel</option>
+            <option>Shopping</option>
+            <option>Bills</option>
+            <option>Education</option>
+            <option>Health</option>
+            <option>Entertainment</option>
+            <option>Other</option>
+          </select>
+
+          <select id="typeFilter">
+            <option value="all">All Types</option>
+            <option value="income">Income</option>
+            <option value="expense">Expense</option>
+          </select>
+        </div>
+
+        <div class="panel">
+          <div id="allTransactions" class="transaction-list"></div>
+        </div>
+      </section>
+
+      <!-- Analytics Section -->
+      <section id="analyticsSection" class="content-section hidden">
+        <div class="section-heading">
+          <div>
+            <h1>Analytics</h1>
+            <p>Understand your income and spending patterns.</p>
+          </div>
+        </div>
+
+        <div class="export-actions">
+          <button id="exportPdfBtn" class="primary-btn">
+            Export PDF
+          </button>
+
+          <button id="exportExcelBtn" class="primary-btn">
+            Export Excel
+          </button>
+
+          <button id="exportCsvBtn" class="primary-btn">
+            Export CSV
+          </button>
+
+          <label class="file-btn">
+            Import CSV
+            <input
+              id="importCsvInput"
+              type="file"
+              accept=".csv,text/csv"
+              hidden
+            />
+          </label>
+        </div>
+
+        <div class="analytics-grid">
+          <div class="panel">
+            <h3>Income vs Expenses</h3>
+            <canvas id="monthlyChart"></canvas>
+          </div>
+
+          <div class="panel">
+            <h3>Category Distribution</h3>
+            <canvas id="analyticsCategoryChart"></canvas>
+          </div>
+        </div>
+      </section>
+
+      <!-- Settings Section -->
+      <section id="settingsSection" class="content-section hidden">
+        <div class="section-heading">
+          <div>
+            <h1>Settings</h1>
+            <p>Manage your application preferences.</p>
+          </div>
+        </div>
+
+        <div class="panel settings-panel">
+          <!-- Savings Goal -->
+          <h3>Savings Goal</h3>
+
+          <div class="goal-row">
+            <input id="goalName" type="text" placeholder="Goal name" />
+
+            <input
+              id="goalAmount"
+              type="number"
+              min="0"
+              placeholder="Target amount"
+            />
+
+            <button id="saveGoalBtn" class="primary-btn">
+              Save Goal
+            </button>
+          </div>
+
+          <div id="goalProgress" class="goal-progress">
+            No goal set
+          </div>
+
+          <hr />
+
+          <!-- Recurring Expenses -->
+          <h3>Recurring Expense</h3>
+
+          <div class="goal-row">
+            <input
+              id="recurringTitle"
+              type="text"
+              placeholder="e.g. Rent"
+            />
+
+            <input
+              id="recurringAmount"
+              type="number"
+              min="0"
+              placeholder="Amount"
+            />
+
+            <select id="recurringFrequency">
+              <option value="monthly">Monthly</option>
+              <option value="weekly">Weekly</option>
+              <option value="yearly">Yearly</option>
+            </select>
+
+            <button id="saveRecurringBtn" class="primary-btn">
+              Add
+            </button>
+          </div>
+
+          <div id="recurringList"></div>
+
+          <hr />
+
+          <!-- Account -->
+          <h3>Account</h3>
+          <p>
+            Logged in as:
+            <strong id="settingsUser">krish</strong>
+          </p>
+
+          <hr />
+
+          <!-- Data Management -->
+          <h3>Data Management</h3>
+
+          <button id="clearDataBtn" class="danger-btn">
+            Clear All Transactions
+          </button>
+        </div>
+      </section>
+    </main>
+  </section>
+
+  <!-- Add Transaction Modal -->
+  <div id="transactionModal" class="modal hidden">
+    <div class="modal-card">
+      <div class="modal-heading">
+        <h2 id="modalTitle">Add Transaction</h2>
+        <button id="closeModalBtn" class="close-btn">×</button>
+      </div>
+
+      <form id="transactionForm">
+        <label for="transactionTitle">Title</label>
+        <input
+          id="transactionTitle"
+          type="text"
+          placeholder="e.g. Grocery shopping"
+          required
+        />
+
+        <label for="transactionAmount">Amount</label>
+        <input
+          id="transactionAmount"
+          type="number"
+          min="0.01"
+          step="0.01"
+          placeholder="Enter amount"
+          required
+        />
+
+        <label for="transactionType">Type</label>
+        <select id="transactionType" required>
+          <option value="expense">Expense</option>
+          <option value="income">Income</option>
+        </select>
+
+        <label for="transactionCategory">Category</label>
+        <select id="transactionCategory" required>
+          <option>Food</option>
+          <option>Travel</option>
+          <option>Shopping</option>
+          <option>Bills</option>
+          <option>Education</option>
+          <option>Health</option>
+          <option>Entertainment</option>
+          <option>Other</option>
+        </select>
+
+        <label for="transactionDate">Date</label>
+        <input id="transactionDate" type="date" required />
+
+        <label for="transactionReceipt">Receipt</label>
+        <input
+          id="transactionReceipt"
+          type="file"
+          accept="image/*,.pdf"
+        />
+
+        <label for="transactionNote">Note</label>
+        <textarea
+          id="transactionNote"
+          placeholder="Optional note"
+        ></textarea>
+
+        <button type="submit" class="primary-btn">
+          Save Transaction
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <footer class="footer">
+    © 2026 Smart Expense Tracker. Built with HTML, CSS & JavaScript.
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
